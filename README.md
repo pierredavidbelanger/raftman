@@ -1,6 +1,6 @@
 # raftman
 
-![raftman](frontend/static/ui/logo-96.png)
+![raftman](https://raw.githubusercontent.com/pierredavidbelanger/raftman/master/frontend/static/ui/logo-96.png)
 
 A syslog server with integrated full text search via a JSON API and Web UI.
 
@@ -12,7 +12,7 @@ To get started quickly, just run the containerized version of raftman:
 
 ```
 sudo docker run --rm --name raftman \
-    -v /tmp/logs.db:/var/lib/raftman/logs.db \
+    -v /tmp:/var/lib/raftman \
     -p 514:514/udp \
     -p 5514:5514 \
     -p 8181:8181 \
