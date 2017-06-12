@@ -41,14 +41,14 @@ func GetSyslogFormatQueryParam(u *url.URL, name string, defaultValue format.Form
 	}
 	// TODO: must support them in syslog.toLogEntry
 	switch strings.ToUpper(s) {
-	//case "RFC3164":
-	//	return syslog.RFC3164, nil
+	case "RFC3164":
+		return syslog.RFC3164, nil
 	case "RFC5424":
 		return syslog.RFC5424, nil
-		//case "RFC6587":
-		//	return syslog.RFC6587, nil
-		//case "AUTOMATIC":
-		//	return syslog.Automatic, nil
+	//case "RFC6587":
+	//	return syslog.RFC6587, nil
+	//case "AUTOMATIC":
+	//	return syslog.Automatic, nil
 	}
 	return nil, fmt.Errorf("Invalid syslog format %s", s)
 }

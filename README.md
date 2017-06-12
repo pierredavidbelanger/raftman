@@ -76,8 +76,8 @@ For example, here is the what the command line would looks like if we set all th
 ```
 raftman \
     -backend sqlite:///var/lib/raftman/logs.db?insertQueueSize=512&queryQueueSize=16&timeout=5s&batchSize=32&retention=INF \
-    -frontend syslog+udp://:514?format=RFC5424&queueSize=512&timeout=1s \
-    -frontend syslog+tcp://:5514?format=RFC5424&queueSize=512&timeout=1s \
+    -frontend syslog+udp://:514?format=RFC5424&queueSize=512&timeout=0s \
+    -frontend syslog+tcp://:5514?format=RFC5424&queueSize=512&timeout=0s \
     -frontend api+http://:8181/api/ \
     -frontend ui+http://:8282/
 ```

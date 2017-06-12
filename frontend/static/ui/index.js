@@ -27,8 +27,8 @@ webix.ready(function () {
                         id: "queryStat",
                         //autoConfig: true,
                         columns: [
+                            {id: "Hostname", header: "Hostname", width: 150},
                             {id: "Application", header: "Application", width: 150},
-                            {id: "Process", header: "Process", width: 75},
                             {id: "Count", header: "Count", fillspace: true}
                         ],
                         select: "row",
@@ -41,8 +41,8 @@ webix.ready(function () {
                         //autoConfig: true,
                         columns: [
                             {id: "Timestamp", header: "Timestamp", width: 175, format: tsFormatter},
+                            {id: "Hostname", header: "Hostname", width: 150},
                             {id: "Application", header: "Application", width: 150},
-                            {id: "Process", header: "Process", width: 75},
                             {id: "Message", header: "Message", fillspace: true}
                         ],
                         data: []
@@ -87,28 +87,28 @@ webix.ready(function () {
             queryStat.clearAll();
             queryStat.add({
                 id: "*-*",
-                Application: "*",
-                Process: "*"
+                Hostname: "*",
+                Application: "*"
             });
             if (data.Stat) {
-                $.each(data.Stat, function (application, processes) {
+                $.each(data.Stat, function (hostname, applications) {
                     queryStat.add({
-                        id: application + "-*",
-                        Application: application,
-                        Process: "*"
+                        id: hostname + "-*",
+                        Hostname: hostname,
+                        Application: "*"
                     });
-                    $.each(processes, function (process, count) {
+                    $.each(applications, function (application, count) {
                         queryStat.add({
-                            id: application + "-" + process,
+                            id: hostname + "-" + application,
+                            Hostname: hostname,
                             Application: application,
-                            Process: process,
                             Count: count
                         });
                     });
                 });
             }
+            queryStat.adjustColumn("Hostname");
             queryStat.adjustColumn("Application");
-            queryStat.adjustColumn("Process");
             queryStat.adjustColumn("Count");
             if (selectedId) {
                 try {
@@ -130,8 +130,8 @@ webix.ready(function () {
                 });
             }
             queryList.adjustColumn("Timestamp");
+            queryList.adjustColumn("Hostname");
             queryList.adjustColumn("Application");
-            queryList.adjustColumn("Process");
             if (data.Entries) {
                 queryList.showItemByIndex(data.Entries.length);
             }
@@ -203,8 +203,8 @@ webix.ready(function () {
         if (data && data.id) {
             var stat = queryStat.getItem(data.id);
             if (stat) {
+                queryListRequest.Hostname = stat.Hostname !== "*" ? stat.Hostname : null;
                 queryListRequest.Application = stat.Application !== "*" ? stat.Application : null;
-                queryListRequest.Process = stat.Process !== "*" ? stat.Process : null;
             }
         }
         queryListRequest.Offset = 0;

@@ -18,6 +18,7 @@ type syslogServerFrontend struct {
 	b      spi.LogBackend
 	logsQ  syslog.LogPartsChannel
 	stopQ  chan *sync.Cond
+	format format.Format
 	server *syslog.Server
 }
 
@@ -37,7 +38,7 @@ func newSyslogServerFrontend(e spi.LogEngine, frontendURL *url.URL) (*syslogServ
 		return nil, err
 	}
 
-	timeout, err := utils.GetDurationQueryParam(frontendURL, "timeout", 1*time.Second)
+	timeout, err := utils.GetDurationQueryParam(frontendURL, "timeout", 0*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +51,8 @@ func newSyslogServerFrontend(e spi.LogEngine, frontendURL *url.URL) (*syslogServ
 
 	stopQ := make(chan *sync.Cond, 1)
 	f.stopQ = stopQ
+
+	f.format = syslogFormat
 
 	server := syslog.NewServer()
 	server.SetFormat(syslogFormat)
@@ -109,19 +112,37 @@ func (f *syslogServerFrontend) run() {
 
 func (f *syslogServerFrontend) toLogEntry(logParts format.LogParts) *api.LogEntry {
 	e := api.LogEntry{}
-	if val, ok := logParts["timestamp"].(time.Time); ok {
-		e.Timestamp = val
-	} else {
-		e.Timestamp = time.Now()
-	}
-	if val, ok := logParts["app_name"].(string); ok {
-		e.Application = val
-	}
-	if val, ok := logParts["proc_id"].(string); ok {
-		e.Process = val
-	}
-	if val, ok := logParts["message"].(string); ok {
-		e.Message = val
+	switch f.format {
+	case syslog.RFC3164:
+		if val, ok := logParts["timestamp"].(time.Time); ok {
+			e.Timestamp = val
+		} else {
+			e.Timestamp = time.Now()
+		}
+		if val, ok := logParts["hostname"].(string); ok {
+			e.Hostname = val
+		}
+		if val, ok := logParts["tag"].(string); ok {
+			e.Application = val
+		}
+		if val, ok := logParts["content"].(string); ok {
+			e.Message = val
+		}
+	case syslog.RFC5424:
+		if val, ok := logParts["timestamp"].(time.Time); ok {
+			e.Timestamp = val
+		} else {
+			e.Timestamp = time.Now()
+		}
+		if val, ok := logParts["hostname"].(string); ok {
+			e.Hostname = val
+		}
+		if val, ok := logParts["app_name"].(string); ok {
+			e.Application = val
+		}
+		if val, ok := logParts["message"].(string); ok {
+			e.Message = val
+		}
 	}
 	return &e
 }

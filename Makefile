@@ -17,7 +17,7 @@ build:
 	go build -v
 
 run:
-	./raftman -backend sqlite:///tmp/logs.db -frontend syslog+udp://:5514/ -frontend ui+http://:8282/
+	./raftman -backend sqlite:///tmp/logs.db -frontend syslog+tcp://:5514?format=RFC3164 -frontend syslog+udp://:5514?format=RFC3164 -frontend ui+http://:8282/
 
 install:
 	go install -v

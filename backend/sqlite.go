@@ -71,13 +71,13 @@ func (b *sqliteBackend) Start() error {
 	}
 	b.db = db
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS logh (ts DATETIME, app VARCHAR(255), proc VARCHAR(255))")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS logh (ts DATETIME, host VARCHAR(255), app VARCHAR(255))")
 	if err != nil {
 		db.Close()
 		return err
 	}
 
-	_, err = db.Exec("CREATE INDEX IF NOT EXISTS logh_idx ON logh (ts, app, proc)")
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS logh_idx ON logh (ts, host, app)")
 	if err != nil {
 		db.Close()
 		return err
@@ -89,7 +89,7 @@ func (b *sqliteBackend) Start() error {
 		return err
 	}
 
-	hStmt, err := db.Prepare("INSERT INTO logh (ts, app, proc) VALUES (?, ?, ?)")
+	hStmt, err := db.Prepare("INSERT INTO logh (ts, host, app) VALUES (?, ?, ?)")
 	if err != nil {
 		db.Close()
 		return err
@@ -223,7 +223,7 @@ func (b *sqliteBackend) handleInsertBatch(tx *sql.Tx, e *api.LogEntry) error {
 }
 
 func (b *sqliteBackend) insertEntry(tx *sql.Tx, e *api.LogEntry) error {
-	if _, err := tx.Stmt(b.hStmt).Exec(e.Timestamp, e.Application, e.Process); err != nil {
+	if _, err := tx.Stmt(b.hStmt).Exec(e.Timestamp, e.Hostname, e.Application); err != nil {
 		return err
 	}
 	if _, err := tx.Stmt(b.bStmt).Exec(e.Message); err != nil {
@@ -243,12 +243,12 @@ func (b *sqliteBackend) buildQueryFromAndWhere(req *api.QueryRequest, sqlBuf *by
 		fmt.Fprint(sqlBuf, "AND h.ts < ? ")
 		*args = append(*args, req.ToTimestamp)
 	}
-	if req.Application != "" {
-		fmt.Fprint(sqlBuf, "AND h.app = ? ")
-		*args = append(*args, req.Application)
-		if req.Process != "" {
-			fmt.Fprint(sqlBuf, "AND h.proc = ? ")
-			*args = append(*args, req.Process)
+	if req.Hostname != "" {
+		fmt.Fprint(sqlBuf, "AND h.host = ? ")
+		*args = append(*args, req.Hostname)
+		if req.Application != "" {
+			fmt.Fprint(sqlBuf, "AND h.app = ? ")
+			*args = append(*args, req.Application)
 		}
 	}
 	if req.Message != "" {
@@ -278,10 +278,10 @@ func (b *sqliteBackend) handleQueryStat(m *queryStatM) {
 	args := []interface{}{}
 
 	sqlBuf := &bytes.Buffer{}
-	fmt.Fprint(sqlBuf, "SELECT h.app, h.proc, COUNT(b.docid) ")
+	fmt.Fprint(sqlBuf, "SELECT h.host, h.app, COUNT(b.docid) ")
 	b.buildQueryFromAndWhere(m.req, sqlBuf, &args)
-	fmt.Fprint(sqlBuf, "GROUP BY h.app, h.proc ")
-	fmt.Fprint(sqlBuf, "ORDER BY h.app, h.proc ")
+	fmt.Fprint(sqlBuf, "GROUP BY h.host, h.app ")
+	fmt.Fprint(sqlBuf, "ORDER BY h.host, h.app ")
 	b.buildQueryLimit(m.req, sqlBuf, &args)
 
 	res := api.QueryStatResponse{}
@@ -329,7 +329,7 @@ func (b *sqliteBackend) handleQueryList(m *queryListM) {
 	args := []interface{}{}
 
 	sqlBuf := &bytes.Buffer{}
-	fmt.Fprint(sqlBuf, "SELECT h.ts, h.app, h.proc, b.msg ")
+	fmt.Fprint(sqlBuf, "SELECT h.ts, h.host, h.app, b.msg ")
 	b.buildQueryFromAndWhere(m.req, sqlBuf, &args)
 	fmt.Fprint(sqlBuf, "ORDER BY h.ts DESC ")
 	b.buildQueryLimit(m.req, sqlBuf, &args)
@@ -347,7 +347,7 @@ func (b *sqliteBackend) handleQueryList(m *queryListM) {
 	entries := make([]*api.LogEntry, 0, clamp(0, m.req.Limit, 500))
 	for rows.Next() {
 		entry := api.LogEntry{}
-		err = rows.Scan(&entry.Timestamp, &entry.Application, &entry.Process, &entry.Message)
+		err = rows.Scan(&entry.Timestamp, &entry.Hostname, &entry.Application, &entry.Message)
 		if err != nil {
 			res.Error = err.Error()
 			m.res <- &res

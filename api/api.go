@@ -6,24 +6,24 @@ import (
 
 type LogEntry struct {
 	Timestamp   time.Time
+	Hostname    string
 	Application string
-	Process     string
 	Message     string
 }
 
 type QueryRequest struct {
 	FromTimestamp time.Time
 	ToTimestamp   time.Time
+	Hostname      string
 	Application   string
-	Process       string
 	Message       string
 	Limit         int
 	Offset        int
 }
 
 type QueryStatResponse struct {
-	Stat map[string]map[string]uint64 `json:",omitempty"`
-	Error   string `json:",omitempty"`
+	Stat  map[string]map[string]uint64 `json:",omitempty"`
+	Error string `json:",omitempty"`
 }
 
 type QueryListResponse struct {
