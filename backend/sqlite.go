@@ -257,16 +257,6 @@ func (b *sqliteBackend) buildQueryFromAndWhere(req *api.QueryRequest, sqlBuf *by
 	}
 }
 
-func clamp(min, v, max int) int {
-	if v < min {
-		return min
-	}
-	if v > max {
-		return max
-	}
-	return v
-}
-
 func (b *sqliteBackend) buildQueryLimit(req *api.QueryRequest, sqlBuf *bytes.Buffer, args *[]interface{}) {
 	fmt.Fprint(sqlBuf, "LIMIT ? OFFSET ? ")
 	*args = append(*args, clamp(0, req.Limit, 256))
