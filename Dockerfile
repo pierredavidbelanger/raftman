@@ -1,15 +1,10 @@
-FROM alpine:3.6
+FROM golang:1.13-alpine3.10 AS golang
+WORKDIR /src
+RUN apk --no-cache add build-base git \
+    && GO111MODULE=off go get github.com/mjibson/esc
+COPY . ./
+RUN go generate && go build
 
+FROM scratch
 ENTRYPOINT ["/usr/local/bin/raftman"]
-
-COPY . /go/src/github.com/pierredavidbelanger/raftman
-
-RUN apk --no-cache add -t build-deps build-base go git \
-	&& apk --no-cache add ca-certificates \
-	&& cd /go/src/github.com/pierredavidbelanger/raftman \
-	&& export GOPATH=/go \
-	&& export PATH=$PATH:$GOPATH/bin \
-	&& make \
-	&& cp ./raftman /usr/local/bin/raftman \
-	&& rm -rf /go \
-	&& apk del --purge build-deps
+COPY --from=golang /src/raftman /usr/local/bin/raftman

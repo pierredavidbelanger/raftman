@@ -1,12 +1,12 @@
 package backend
 
 import (
-	"github.com/pierredavidbelanger/raftman/api"
-	"net/url"
-	"time"
 	"fmt"
-	"sync"
+	"github.com/pierredavidbelanger/raftman/api"
 	"github.com/pierredavidbelanger/raftman/utils"
+	"net/url"
+	"sync"
+	"time"
 )
 
 type queryStatM struct {

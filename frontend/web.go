@@ -1,11 +1,11 @@
 package frontend
 
 import (
-	"github.com/pierredavidbelanger/raftman/spi"
-	"net/url"
-	"net/http"
-	"net"
 	"fmt"
+	"github.com/pierredavidbelanger/raftman/spi"
+	"net"
+	"net/http"
+	"net/url"
 )
 
 type webFrontend struct {

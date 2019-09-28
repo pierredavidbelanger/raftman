@@ -1,16 +1,16 @@
 package frontend
 
 import (
-	"gopkg.in/mcuadros/go-syslog.v2"
-	"net/url"
+	"fmt"
+	"github.com/pierredavidbelanger/raftman/api"
 	"github.com/pierredavidbelanger/raftman/spi"
 	"github.com/pierredavidbelanger/raftman/utils"
-	"time"
-	"sync"
-	"strings"
-	"github.com/pierredavidbelanger/raftman/api"
+	"gopkg.in/mcuadros/go-syslog.v2"
 	"gopkg.in/mcuadros/go-syslog.v2/format"
-	"fmt"
+	"net/url"
+	"strings"
+	"sync"
+	"time"
 )
 
 type syslogServerFrontend struct {

@@ -1,18 +1,17 @@
 package engine
 
 import (
-	"net/url"
-	"github.com/pierredavidbelanger/raftman/spi"
+	"fmt"
 	"github.com/pierredavidbelanger/raftman/backend"
 	"github.com/pierredavidbelanger/raftman/frontend"
-	"fmt"
+	"github.com/pierredavidbelanger/raftman/spi"
+	"log"
+	"net/url"
 	"os"
 	"os/signal"
-	"log"
 )
 
 type engine struct {
-
 	backURL   *url.URL
 	frontURLs []*url.URL
 	back      spi.LogBackend

@@ -1,9 +1,9 @@
 package backend
 
 import (
-	"net/url"
-	"github.com/pierredavidbelanger/raftman/spi"
 	"fmt"
+	"github.com/pierredavidbelanger/raftman/spi"
+	"net/url"
 )
 
 func NewBackend(e spi.LogEngine, backendURL *url.URL) (spi.LogBackend, error) {

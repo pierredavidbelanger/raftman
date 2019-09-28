@@ -1,18 +1,18 @@
 package backend
 
 import (
-	"database/sql"
-	"net/url"
-	"github.com/pierredavidbelanger/raftman/api"
-	_ "github.com/mattn/go-sqlite3"
-	"sync"
-	"log"
-	"path/filepath"
-	"os"
-	"github.com/pierredavidbelanger/raftman/utils"
-	"fmt"
 	"bytes"
+	"database/sql"
+	"fmt"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/pierredavidbelanger/raftman/api"
+	"github.com/pierredavidbelanger/raftman/utils"
+	"log"
 	"math"
+	"net/url"
+	"os"
+	"path/filepath"
+	"sync"
 	"time"
 )
 

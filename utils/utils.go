@@ -1,13 +1,13 @@
 package utils
 
 import (
+	"fmt"
+	"gopkg.in/mcuadros/go-syslog.v2"
+	"gopkg.in/mcuadros/go-syslog.v2/format"
 	"net/url"
 	"strconv"
-	"time"
-	"gopkg.in/mcuadros/go-syslog.v2/format"
 	"strings"
-	"gopkg.in/mcuadros/go-syslog.v2"
-	"fmt"
+	"time"
 )
 
 func GetIntQueryParam(u *url.URL, name string, defaultValue int) (int, error) {
@@ -45,10 +45,10 @@ func GetSyslogFormatQueryParam(u *url.URL, name string, defaultValue format.Form
 		return syslog.RFC3164, nil
 	case "RFC5424":
 		return syslog.RFC5424, nil
-	//case "RFC6587":
-	//	return syslog.RFC6587, nil
-	//case "AUTOMATIC":
-	//	return syslog.Automatic, nil
+		//case "RFC6587":
+		//	return syslog.RFC6587, nil
+		//case "AUTOMATIC":
+		//	return syslog.Automatic, nil
 	}
 	return nil, fmt.Errorf("Invalid syslog format %s", s)
 }

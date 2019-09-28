@@ -24,7 +24,7 @@ sudo docker run --rm --name raftman \
 ```
 
 
-This will start raftman with all default options. It listen on port 514 (UDP) and 5514 (TCP) on the host for incomming RFC5424 syslog packets and store them into an SQLite database stored in `/tmp/logs.db` on the host. It also exposes the JSON API on http://localhost:8181/api/ and the Web UI on http://localhost:8282/.
+This will start raftman with all default options. It listen on port 514 (UDP) and 5514 (TCP) on the host for incoming RFC5424 syslog packets and store them into an SQLite database stored in `/tmp/logs.db` on the host. It also exposes the JSON API on http://localhost:8181/api/ and the Web UI on http://localhost:8282/.
 
 ### send logs
 
@@ -33,14 +33,13 @@ Time to fill our database. The easyest way is to just start [logspout](https://g
 ```
 docker run --rm --name logspout \
     -v /var/run/docker.sock:/var/run/docker.sock:ro \
+    --link raftman \
     gliderlabs/logspout \
-        syslog://10.0.1.2:514
+        syslog://raftman:514
 ```
 
 
-**Reaplce `10.0.1.2` with your host ip.**
-
-This last container will grab other containers output lines and send them as syslog packet to the configured ip (ie: our raftman container).
+This last container will grab other containers output lines and send them as syslog packet to the configured syslog server (ie: our linked raftman container).
 
 ### generate logs
 

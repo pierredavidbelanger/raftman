@@ -23,12 +23,12 @@ type QueryRequest struct {
 
 type QueryStatResponse struct {
 	Stat  map[string]map[string]uint64 `json:",omitempty"`
-	Error string `json:",omitempty"`
+	Error string                       `json:",omitempty"`
 }
 
 type QueryListResponse struct {
 	Entries []*LogEntry `json:",omitempty"`
-	Error   string `json:",omitempty"`
+	Error   string      `json:",omitempty"`
 }
 
 type InsertRequest struct {

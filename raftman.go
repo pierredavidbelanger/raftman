@@ -1,3 +1,4 @@
+//go:generate $GOPATH/bin/esc -o frontend/static.go -pkg frontend frontend/static
 package main
 
 import (

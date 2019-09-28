@@ -2,8 +2,8 @@ package frontend
 
 import (
 	"github.com/pierredavidbelanger/raftman/spi"
-	"net/url"
 	"net/http"
+	"net/url"
 	"os"
 )
 
