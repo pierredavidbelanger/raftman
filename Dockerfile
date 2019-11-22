@@ -5,6 +5,7 @@ RUN apk --no-cache add build-base git \
 COPY . ./
 RUN go generate && go build
 
-FROM scratch
+FROM alpine:3.10
 ENTRYPOINT ["/usr/local/bin/raftman"]
+RUN mkdir -p /var/lib/raftman
 COPY --from=golang /src/raftman /usr/local/bin/raftman
