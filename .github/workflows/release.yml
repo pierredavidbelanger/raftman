@@ -20,15 +20,17 @@ jobs:
       - uses: mlugg/setup-zig@v2
         with:
           version: 0.14.1
+      # Written outside the checkout: goreleaser refuses to release from a
+      # dirty working tree, and an untracked file counts as dirty.
       - name: Release notes from CHANGELOG.md
         run: |
-          awk -v ver="$GITHUB_REF_NAME" '/^## \[/{ p = ($0 ~ "^## \\[" ver "\\]") ; next } p' CHANGELOG.md > notes.md
-          test -s notes.md || { echo "no CHANGELOG.md section for $GITHUB_REF_NAME"; exit 1; }
-          cat notes.md
+          awk -v ver="$GITHUB_REF_NAME" '/^## \[/{ p = ($0 ~ "^## \\[" ver "\\]") ; next } p' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          test -s "$RUNNER_TEMP/notes.md" || { echo "no CHANGELOG.md section for $GITHUB_REF_NAME"; exit 1; }
+          cat "$RUNNER_TEMP/notes.md"
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
-          args: release --clean --release-notes=notes.md
+          args: release --clean --release-notes=${{ runner.temp }}/notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
