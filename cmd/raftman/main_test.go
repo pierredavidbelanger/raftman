@@ -30,7 +30,7 @@ import (
 const legacyYear = "2026"
 
 const (
-	legacyDir   = "testdata/legacy"
+	legacyDir   = "../../testdata/legacy"
 	packetCount = 12
 )
 
@@ -168,6 +168,11 @@ type harness struct {
 }
 
 func startHarness(t *testing.T, db string) *harness {
+	return startHarnessWith(t, db, "")
+}
+
+// startHarnessWith appends query to the backend URL, e.g. "?batchSize=1".
+func startHarnessWith(t *testing.T, db, query string) *harness {
 	t.Helper()
 	if db == "" {
 		db = filepath.Join(t.TempDir(), "logs.db")
@@ -181,7 +186,7 @@ func startHarness(t *testing.T, db string) *harness {
 	}
 	h.api = fmt.Sprintf("http://127.0.0.1:%d/api/", h.apiPort)
 	h.child = spawn(t,
-		"-backend", "sqlite://"+db,
+		"-backend", "sqlite://"+db+query,
 		"-frontend", fmt.Sprintf("syslog+udp://127.0.0.1:%d", h.udp5424),
 		"-frontend", fmt.Sprintf("syslog+tcp://127.0.0.1:%d", h.tcp5424),
 		"-frontend", fmt.Sprintf("syslog+udp://127.0.0.1:%d?format=RFC3164", h.udp3164),
@@ -652,10 +657,8 @@ func TestShutdownSIGINT(t *testing.T) {
 	waitCount(t, h2.api, packetCount)
 }
 
-// TestShutdownSIGTERM: docker stop sends SIGTERM. Finding F2: the current binary
-// does not trap it and dies with the insert queue unflushed.
+// TestShutdownSIGTERM: docker stop sends SIGTERM; it must be handled like SIGINT.
 func TestShutdownSIGTERM(t *testing.T) {
-	t.Skip("F2: SIGTERM is not handled yet; enable in phase 2")
 	h := startHarness(t, "")
 	sendPackets(t, h, loadPackets(t))
 	waitCount(t, h.api, packetCount)
@@ -667,18 +670,54 @@ func TestShutdownSIGTERM(t *testing.T) {
 	waitCount(t, h2.api, packetCount)
 }
 
-// TestShutdownFlushesQueue: finding F3, entries still queued at shutdown may be
-// dropped by the current binary.
+// TestShutdownFlushesQueue: entries received but not yet written when the
+// signal arrives must still reach the database. batchSize=1 makes every entry
+// its own fsync'ed transaction so a backlog builds up.
 func TestShutdownFlushesQueue(t *testing.T) {
-	t.Skip("F3: the insert queue is not drained on shutdown yet; enable in phase 2")
-	h := startHarness(t, "")
+	h := startHarnessWith(t, "", "?batchSize=1&insertQueueSize=1000")
 	for i := 0; i < 200; i++ {
 		sendUDP(t, h.udp5424, fmt.Sprintf("<134>1 2019-01-01T00:00:00Z h a - - - line %d", i))
 	}
+	// Give go-syslog time to pull every datagram out of the kernel; what is
+	// lost there is not a queue-flush problem.
+	time.Sleep(200 * time.Millisecond)
 	h.signal(t, os.Interrupt)
-	if code := h.wait(t, 10*time.Second); code != 0 {
+	if code := h.wait(t, 30*time.Second); code != 0 {
 		t.Fatalf("exit code %d; output:\n%s", code, h.output)
 	}
 	h2 := startHarness(t, h.db)
 	waitCount(t, h2.api, 200)
+}
+
+// TestQueryTimeoutReturns400 pins the one path that answers 400: a query that
+// exceeds the backend timeout.
+func TestQueryTimeoutReturns400(t *testing.T) {
+	h := startHarnessWith(t, "", "?timeout=1ns")
+	status, body := call(t, h.api+"list", "POST", str(`{"Limit":1}`))
+	if status != 400 || string(body) != `{"Error":"operation timed out after 1ns"}`+"\n" {
+		t.Errorf("got %d %s", status, body)
+	}
+	if ct := contentType(t, h.api+"stat"); ct != "application/json" {
+		t.Errorf("Content-Type %q", ct)
+	}
+}
+
+func contentType(t *testing.T, url string) string {
+	t.Helper()
+	res, err := http.Get(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	return res.Header.Get("Content-Type")
+}
+
+func TestVersionFlag(t *testing.T) {
+	ch := spawn(t, "-version")
+	if code := ch.wait(t, 10*time.Second); code != 0 {
+		t.Fatalf("exit code %d; output:\n%s", code, ch.output)
+	}
+	if out := ch.output.String(); out != "dev\n" {
+		t.Errorf("output %q, want %q", out, "dev\n")
+	}
 }

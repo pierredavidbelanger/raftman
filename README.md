@@ -1,6 +1,6 @@
 # raftman
 
-![raftman](https://raw.githubusercontent.com/pierredavidbelanger/raftman/master/frontend/static/ui/logo-96.png)
+![raftman](https://raw.githubusercontent.com/pierredavidbelanger/raftman/master/internal/server/ui/logo-96.png)
 
 A syslog server with integrated full text search via a JSON API and Web UI.
 
@@ -26,6 +26,8 @@ sudo docker run --rm --name raftman \
 
 
 This will start raftman with all default options. It listen on port 514 (UDP) and 5514 (TCP) on the host for incoming RFC5424 syslog packets and store them into an SQLite database stored in `/tmp/logs.db` on the host. It also exposes the JSON API on http://localhost:8181/api/ and the Web UI on http://localhost:8282/.
+
+The database is opened in SQLite WAL mode, so `logs.db-wal` and `logs.db-shm` files appear next to it while raftman runs. Stop raftman with SIGINT or SIGTERM (`docker stop` does): it writes every entry it has received before exiting.
 
 ### send logs
 
@@ -69,7 +71,7 @@ or pop the Web UI at http://localhost:8282/
 
 ## configuration
 
-All raftman configuration options are set as arguments in the command line.
+All raftman configuration options are set as arguments in the command line. `raftman -version` prints the version.
 
 For example, here is the what the command line would looks like if we set all the default values explicitly:
 
@@ -87,7 +89,13 @@ raftman \
 raftman needs Go and a C compiler (the SQLite driver is cgo):
 
 ```
-go build
+go build ./cmd/raftman
+```
+
+or, without cloning:
+
+```
+go install github.com/pierredavidbelanger/raftman/cmd/raftman@latest
 ```
 
 Run the tests with:

@@ -4,22 +4,25 @@ version: 2
 
 builds:
   - id: linux-amd64
+    main: ./cmd/raftman
     goos: [linux]
     goarch: [amd64]
     env:
       - CGO_ENABLED=1
       - CC=zig cc -target x86_64-linux-musl
     flags: [-trimpath]
-    ldflags: ["-s -w -linkmode external -extldflags -static"]
+    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags -static"]
   - id: linux-arm64
+    main: ./cmd/raftman
     goos: [linux]
     goarch: [arm64]
     env:
       - CGO_ENABLED=1
       - CC=zig cc -target aarch64-linux-musl
     flags: [-trimpath]
-    ldflags: ["-s -w -linkmode external -extldflags -static"]
+    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags -static"]
   - id: linux-armv7
+    main: ./cmd/raftman
     goos: [linux]
     goarch: [arm]
     goarm: ["7"]
@@ -27,7 +30,7 @@ builds:
       - CGO_ENABLED=1
       - CC=zig cc -target arm-linux-musleabihf
     flags: [-trimpath]
-    ldflags: ["-s -w -linkmode external -extldflags -static"]
+    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags -static"]
 
 archives:
   - formats: [tar.gz]

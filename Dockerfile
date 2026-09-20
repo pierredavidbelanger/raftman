@@ -4,7 +4,8 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=1 go build -trimpath -ldflags '-s -w' -o /raftman .
+ARG VERSION=dev
+RUN CGO_ENABLED=1 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /raftman ./cmd/raftman
 
 FROM alpine:3.22
 RUN mkdir -p /var/lib/raftman

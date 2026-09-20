@@ -1,8 +1,8 @@
+// Package api holds the JSON types of the HTTP API. Field names and omitempty
+// tags are part of the public contract; do not change them.
 package api
 
-import (
-	"time"
-)
+import "time"
 
 type LogEntry struct {
 	Timestamp   time.Time
@@ -29,13 +29,4 @@ type QueryStatResponse struct {
 type QueryListResponse struct {
 	Entries []*LogEntry `json:",omitempty"`
 	Error   string      `json:",omitempty"`
-}
-
-type InsertRequest struct {
-	Entry   *LogEntry
-	Entries []*LogEntry
-}
-
-type InsertResponse struct {
-	Error string `json:",omitempty"`
 }
