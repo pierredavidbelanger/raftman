@@ -43,6 +43,8 @@ archives:
 checksum:
   name_template: checksums.txt
 
-# Release notes come from CHANGELOG.md (see release.yml).
+# Release notes come from CHANGELOG.md, passed with --release-notes by
+# release.yml, which makes goreleaser skip its own git-based changelog.
+# Do not set changelog.disable: it also skips loading that file.
 changelog:
-  disable: true
+  use: git
