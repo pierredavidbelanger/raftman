@@ -1,3 +1,6 @@
-frontend/static.go
 vendor/
 raftman
+dist/
+.git/
+.idea/
+spec/

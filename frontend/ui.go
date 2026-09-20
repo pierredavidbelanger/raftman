@@ -1,11 +1,16 @@
 package frontend
 
 import (
-	"github.com/pierredavidbelanger/raftman/spi"
+	"embed"
+	"io/fs"
 	"net/http"
 	"net/url"
-	"os"
+
+	"github.com/pierredavidbelanger/raftman/spi"
 )
+
+//go:embed static/ui
+var staticFS embed.FS
 
 type uiFrontend struct {
 	webFrontend
@@ -24,14 +29,14 @@ func newUIFrontend(e spi.LogEngine, frontendURL *url.URL) (*uiFrontend, error) {
 func (f *uiFrontend) Start() error {
 	_, b := f.e.GetBackend()
 	f.api.b = b
+	ui, err := fs.Sub(staticFS, "static/ui")
+	if err != nil {
+		return err
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc(f.path+"api/stat", f.api.handleStat)
 	mux.HandleFunc(f.path+"api/list", f.api.handleList)
-	var useLocal bool
-	if _, err := os.Stat("frontend/static/ui/index.html"); err == nil {
-		useLocal = true
-	}
-	mux.Handle(f.path, http.FileServer(Dir(useLocal, "/frontend/static/ui")))
+	mux.Handle(f.path, http.FileServer(http.FS(ui)))
 	return f.startHandler(mux)
 }
 

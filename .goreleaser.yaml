@@ -1,0 +1,41 @@
+# Static linux binaries. The SQLite driver is cgo, so cross-compilation uses
+# zig as the C compiler and links statically against musl.
+version: 2
+
+builds:
+  - id: linux-amd64
+    goos: [linux]
+    goarch: [amd64]
+    env:
+      - CGO_ENABLED=1
+      - CC=zig cc -target x86_64-linux-musl
+    flags: [-trimpath]
+    ldflags: ["-s -w -linkmode external -extldflags -static"]
+  - id: linux-arm64
+    goos: [linux]
+    goarch: [arm64]
+    env:
+      - CGO_ENABLED=1
+      - CC=zig cc -target aarch64-linux-musl
+    flags: [-trimpath]
+    ldflags: ["-s -w -linkmode external -extldflags -static"]
+  - id: linux-armv7
+    goos: [linux]
+    goarch: [arm]
+    goarm: ["7"]
+    env:
+      - CGO_ENABLED=1
+      - CC=zig cc -target arm-linux-musleabihf
+    flags: [-trimpath]
+    ldflags: ["-s -w -linkmode external -extldflags -static"]
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
+    files: [LICENSE, README.md]
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: git

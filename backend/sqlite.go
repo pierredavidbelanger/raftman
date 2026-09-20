@@ -166,7 +166,11 @@ func (b *sqliteBackend) run() {
 		case now := <-retentionTicker.C:
 			b.handleRetention(now)
 		case cond := <-b.stopQ:
+			// Take the lock so the closer is guaranteed to be in Wait()
+			// before we broadcast; otherwise the wakeup can be lost.
+			cond.L.Lock()
 			cond.Broadcast()
+			cond.L.Unlock()
 			return
 		}
 	}

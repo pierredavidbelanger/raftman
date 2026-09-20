@@ -1,0 +1,7 @@
+/raftman
+/dist/
+*.db
+*.db-wal
+*.db-shm
+!/testdata/**/*.db
+.idea/

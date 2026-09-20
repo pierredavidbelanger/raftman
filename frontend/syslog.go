@@ -104,7 +104,11 @@ func (f *syslogServerFrontend) run() {
 		case logParts := <-f.logsQ:
 			f.b.Insert(&api.InsertRequest{Entry: f.toLogEntry(logParts)})
 		case cond := <-f.stopQ:
+			// Take the lock so the closer is guaranteed to be in Wait()
+			// before we broadcast; otherwise the wakeup can be lost.
+			cond.L.Lock()
 			cond.Broadcast()
+			cond.L.Unlock()
 			return
 		}
 	}

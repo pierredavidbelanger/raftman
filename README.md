@@ -6,6 +6,7 @@ A syslog server with integrated full text search via a JSON API and Web UI.
 
 - [getting started](#getting-started)
 - [configuration](#configuration)
+- [build from source](#build-from-source)
 
 ## getting started
 
@@ -80,3 +81,19 @@ raftman \
     -frontend api+http://:8181/api/ \
     -frontend ui+http://:8282/
 ```
+
+## build from source
+
+raftman needs Go and a C compiler (the SQLite driver is cgo):
+
+```
+go build
+```
+
+Run the tests with:
+
+```
+go test -race ./...
+```
+
+The `Dockerfile` builds the same binary on Alpine. Release binaries for linux amd64, arm64 and armv7 are attached to GitHub releases, and multi-arch images are published as `pierredavidbelanger/raftman`.

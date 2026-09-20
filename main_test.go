@@ -115,6 +115,12 @@ func (c *child) wait(t *testing.T, d time.Duration) int {
 	select {
 	case <-c.exited:
 	case <-time.After(d):
+		// SIGQUIT makes the Go runtime dump all goroutines before dying.
+		_ = c.cmd.Process.Signal(syscall.SIGQUIT)
+		select {
+		case <-c.exited:
+		case <-time.After(5 * time.Second):
+		}
 		t.Fatalf("child did not exit within %s; output:\n%s", d, c.output)
 	}
 	if c.err == nil {
