@@ -8,6 +8,8 @@ The GitHub release notes for a version are taken verbatim from its section here.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-20
+
 Behavior changes, all in the direction users would expect. Databases written
 by earlier versions keep working; existing rows are not modified.
 
@@ -90,7 +92,8 @@ First tagged release. Syslog server (RFC5424 and RFC3164, UDP and TCP) storing
 entries in an SQLite database with full text search, a JSON API (`stat`,
 `list`) and a web UI. Retention by age. Built with Go 1.13 and Go modules.
 
-[Unreleased]: https://github.com/pierredavidbelanger/raftman/compare/1.0.2...HEAD
+[Unreleased]: https://github.com/pierredavidbelanger/raftman/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/pierredavidbelanger/raftman/compare/1.0.2...1.1.0
 [1.0.2]: https://github.com/pierredavidbelanger/raftman/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/pierredavidbelanger/raftman/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/pierredavidbelanger/raftman/releases/tag/1.0.0
