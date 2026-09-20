@@ -608,18 +608,23 @@ func TestUIFrontend(t *testing.T) {
 	}
 }
 
-// TestSyslogMissingTimestamp pins finding F14: an RFC5424 packet whose timestamp
-// is "-" is stored with the zero time instead of the arrival time, because the
-// parser yields a zero time.Time and the fallback in toLogEntry never fires.
-// Candidate fix in phase 4; until then this is the observed behavior.
+// TestSyslogMissingTimestamp: an RFC5424 packet whose timestamp is "-" gets
+// the arrival time (it used to be stored as year 0001).
 func TestSyslogMissingTimestamp(t *testing.T) {
 	h := startHarness(t, "")
+	before := time.Now().Add(-2 * time.Second)
 	sendUDP(t, h.udp5424, "<134>1 - myhost myapp - - - no timestamp")
 	waitCount(t, h.api, 1)
-	_, body := call(t, h.api+"list", "POST", str(`{"Limit":1}`))
-	want := `{"Entries":[{"Timestamp":"0001-01-01T00:00:00Z","Hostname":"myhost","Application":"myapp","Message":"no timestamp"}]}` + "\n"
-	if string(body) != want {
-		t.Errorf("got %s want %s", body, want)
+	entries := listEntries(t, h.api, `{"Limit":1}`)
+	if len(entries) != 1 {
+		t.Fatalf("got %d entries, want 1", len(entries))
+	}
+	e := entries[0]
+	if e.Timestamp.Before(before) || e.Timestamp.After(time.Now().Add(2*time.Second)) {
+		t.Errorf("timestamp %s not close to now", e.Timestamp)
+	}
+	if e.Hostname != "myhost" || e.Application != "myapp" || e.Message != "no timestamp" {
+		t.Errorf("unexpected entry %+v", e)
 	}
 }
 

@@ -21,6 +21,11 @@ by earlier versions keep working; existing rows are not modified.
 - The `Application` filter of the API now applies on its own. It used to be
   silently ignored unless `Hostname` was also given.
 
+### Fixed
+
+- An RFC5424 packet with `-` as timestamp was stored at year 0001. It now
+  gets the time raftman received it.
+
 ## [1.0.2] - 2026-09-20
 
 No change to the syslog inputs, the JSON API, the command line or the database

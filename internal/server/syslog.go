@@ -85,13 +85,11 @@ func (s *Syslog) Close() error {
 }
 
 func toEntry(f format.Format, parts format.LogParts) *api.LogEntry {
-	e := &api.LogEntry{}
-	// go-syslog always sets "timestamp"; a packet without one yields the zero
-	// time, which is stored as is (spec quirk Q4).
-	if ts, ok := parts["timestamp"].(time.Time); ok {
+	e := &api.LogEntry{Timestamp: time.Now()}
+	// A packet without a timestamp ("-" in RFC5424) yields the zero time;
+	// the arrival time is used instead.
+	if ts, ok := parts["timestamp"].(time.Time); ok && !ts.IsZero() {
 		e.Timestamp = ts
-	} else {
-		e.Timestamp = time.Now()
 	}
 	e.Hostname, _ = parts["hostname"].(string)
 	switch f {
