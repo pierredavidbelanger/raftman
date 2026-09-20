@@ -11,6 +11,12 @@ The GitHub release notes for a version are taken verbatim from its section here.
 Behavior changes, all in the direction users would expect. Databases written
 by earlier versions keep working; existing rows are not modified.
 
+### Added
+
+- Syslog frontends accept `format=RFC6587` (octet-counted framing over TCP)
+  and `format=automatic`, which detects RFC3164, RFC5424 or RFC6587 per
+  message, so one listener can serve mixed senders.
+
 ### Changed
 
 - Timestamps are stored in UTC. Entries from senders in different timezones

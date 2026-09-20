@@ -117,6 +117,10 @@ func formatParam(u *url.URL, name string, def format.Format) (format.Format, err
 		return syslog.RFC3164, nil
 	case "RFC5424":
 		return syslog.RFC5424, nil
+	case "RFC6587":
+		return syslog.RFC6587, nil
+	case "AUTOMATIC":
+		return syslog.Automatic, nil
 	}
 	return nil, fmt.Errorf("Invalid syslog format %s", s)
 }

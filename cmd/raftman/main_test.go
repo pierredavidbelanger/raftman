@@ -777,3 +777,65 @@ func TestUTCTimestamps(t *testing.T) {
 		t.Errorf("range filter: got %s", body)
 	}
 }
+
+// TestSyslogAutomaticFormat: one listener accepting RFC3164, RFC5424 and
+// octet-counted RFC6587 frames on the same TCP port.
+func TestSyslogAutomaticFormat(t *testing.T) {
+	tcp, api := freeTCPPort(t), freeTCPPort(t)
+	ch := spawn(t,
+		"-backend", "sqlite://"+filepath.Join(t.TempDir(), "logs.db"),
+		"-frontend", fmt.Sprintf("syslog+tcp://127.0.0.1:%d?format=automatic", tcp),
+		"-frontend", fmt.Sprintf("api+http://127.0.0.1:%d/api/", api),
+	)
+	base := fmt.Sprintf("http://127.0.0.1:%d/api/", api)
+	waitReady(t, ch, base+"stat")
+	c, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", tcp))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rfc3164 := "<34>Nov 21 10:00:08 host3 su: old style"
+	rfc5424 := "<134>1 2019-11-21T10:00:09Z host5 app - - - new style"
+	rfc6587 := "<134>1 2019-11-21T10:00:10Z host6 app - - - framed"
+	io.WriteString(c, rfc3164+"\n")
+	io.WriteString(c, rfc5424+"\n")
+	io.WriteString(c, fmt.Sprintf("%d %s", len(rfc6587), rfc6587))
+	c.Close()
+	waitCount(t, base, 3)
+	got := listEntries(t, base, `{"Limit":10}`)
+	// Newest first; the RFC3164 packet has no year and gets the current one.
+	want := []entry{
+		{time.Date(time.Now().Year(), 11, 21, 10, 0, 8, 0, time.UTC), "host3", "su", "old style"},
+		{time.Date(2019, 11, 21, 10, 0, 10, 0, time.UTC), "host6", "app", "framed"},
+		{time.Date(2019, 11, 21, 10, 0, 9, 0, time.UTC), "host5", "app", "new style"},
+	}
+	for i := range want {
+		if i >= len(got) || !got[i].Timestamp.Equal(want[i].Timestamp) || got[i].Hostname != want[i].Hostname ||
+			got[i].Application != want[i].Application || got[i].Message != want[i].Message {
+			t.Errorf("entry %d: got %+v, want %+v", i, got[i], want[i])
+		}
+	}
+}
+
+func TestSyslogRFC6587(t *testing.T) {
+	tcp, api := freeTCPPort(t), freeTCPPort(t)
+	ch := spawn(t,
+		"-backend", "sqlite://"+filepath.Join(t.TempDir(), "logs.db"),
+		"-frontend", fmt.Sprintf("syslog+tcp://127.0.0.1:%d?format=rfc6587", tcp),
+		"-frontend", fmt.Sprintf("api+http://127.0.0.1:%d/api/", api),
+	)
+	base := fmt.Sprintf("http://127.0.0.1:%d/api/", api)
+	waitReady(t, ch, base+"stat")
+	c, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", tcp))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m1 := "<134>1 2019-11-21T10:00:00Z h a - - - one\nwith newline"
+	m2 := "<134>1 2019-11-21T10:00:01Z h a - - - two"
+	io.WriteString(c, fmt.Sprintf("%d %s%d %s", len(m1), m1, len(m2), m2))
+	c.Close()
+	waitCount(t, base, 2)
+	got := listEntries(t, base, `{"Limit":10}`)
+	if len(got) != 2 || got[0].Message != "two" || got[1].Message != "one\nwith newline" {
+		t.Errorf("got %+v", got)
+	}
+}

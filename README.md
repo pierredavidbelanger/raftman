@@ -85,6 +85,8 @@ raftman \
     -frontend ui+http://:8282/
 ```
 
+Syslog `format` is one of `RFC5424` (default), `RFC3164`, `RFC6587` (octet-counted framing over TCP) or `automatic`, which detects the format of each message.
+
 ## build from source
 
 raftman needs Go and a C compiler (the SQLite driver is cgo):

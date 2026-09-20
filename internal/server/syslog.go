@@ -67,7 +67,7 @@ func (s *Syslog) Start() error {
 func (s *Syslog) forward() {
 	defer close(s.done)
 	for parts := range s.parts {
-		s.store.Insert(toEntry(s.cfg.Format, parts))
+		s.store.Insert(toEntry(parts))
 	}
 }
 
@@ -84,7 +84,7 @@ func (s *Syslog) Close() error {
 	return err
 }
 
-func toEntry(f format.Format, parts format.LogParts) *api.LogEntry {
+func toEntry(parts format.LogParts) *api.LogEntry {
 	e := &api.LogEntry{Timestamp: time.Now()}
 	// A packet without a timestamp ("-" in RFC5424) yields the zero time;
 	// the arrival time is used instead.
@@ -92,11 +92,13 @@ func toEntry(f format.Format, parts format.LogParts) *api.LogEntry {
 		e.Timestamp = ts
 	}
 	e.Hostname, _ = parts["hostname"].(string)
-	switch f {
-	case syslog.RFC3164:
+	// RFC3164 parses into tag/content, RFC5424 and RFC6587 into
+	// app_name/message. Looking at the keys rather than the configured format
+	// also covers format=automatic, where each packet picks its own parser.
+	if _, rfc3164 := parts["tag"]; rfc3164 {
 		e.Application, _ = parts["tag"].(string)
 		e.Message, _ = parts["content"].(string)
-	default:
+	} else {
 		e.Application, _ = parts["app_name"].(string)
 		e.Message, _ = parts["message"].(string)
 	}
