@@ -1,0 +1,116 @@
+:root {
+  --border: #d0d0d0;
+  --head: #f0f0f0;
+  --selected: #cce4ff;
+  --hover: #f5f5f5;
+  --error: #b00020;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font: 13px/1.4 system-ui, sans-serif;
+  color: #222;
+  background: #fff;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--head);
+}
+
+.toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.toolbar input, .toolbar button {
+  font: inherit;
+  padding: 3px 6px;
+}
+
+#message {
+  flex: 1 1 160px;
+  min-width: 120px;
+}
+
+.status {
+  color: var(--error);
+  margin-left: auto;
+}
+
+main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.pane {
+  overflow: auto;
+}
+
+.stat {
+  width: 320px;
+  flex: none;
+  border-right: 1px solid var(--border);
+}
+
+.list {
+  flex: 1;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  text-align: left;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: var(--head);
+}
+
+.stat tbody tr {
+  cursor: pointer;
+}
+
+.stat tbody tr:hover {
+  background: var(--hover);
+}
+
+.stat tbody tr.selected {
+  background: var(--selected);
+}
+
+.stat td:last-child {
+  text-align: right;
+}
+
+.list td:last-child {
+  font-family: ui-monospace, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  width: 100%;
+}

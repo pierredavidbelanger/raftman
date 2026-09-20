@@ -586,9 +586,16 @@ func TestUIFrontend(t *testing.T) {
 	if status != 200 || !strings.Contains(string(body), "<script") {
 		t.Errorf("index: got %d %q", status, body)
 	}
-	for _, f := range []string{"index.html", "index.js", "favicon.ico", "logo-32.png", "logo-96.png"} {
-		if status, body := call(t, base+f, "GET", nil); status != 200 || len(body) == 0 {
+	for _, f := range []string{"index.html", "index.js", "index.css", "favicon.ico", "logo-32.png", "logo-96.png"} {
+		status, body := call(t, base+f, "GET", nil)
+		if status != 200 || len(body) == 0 {
 			t.Errorf("%s: got %d, %d bytes", f, status, len(body))
+		}
+		// The UI must work offline: no CDN, no external script or style.
+		if strings.HasSuffix(f, ".html") || strings.HasSuffix(f, ".js") || strings.HasSuffix(f, ".css") {
+			if strings.Contains(string(body), "://") || strings.Contains(string(body), "//cdn") {
+				t.Errorf("%s references an external URL", f)
+			}
 		}
 	}
 	if status, _ := call(t, base+"nope.txt", "GET", nil); status != 404 {

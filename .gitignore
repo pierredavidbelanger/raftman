@@ -5,3 +5,4 @@
 *.db-shm
 !/testdata/**/*.db
 .idea/
+/.claude/launch.json

@@ -1,12 +1,37 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <link rel="icon" type="image/x-icon" sizes="16x16 32x32" href="favicon.ico">
-    <link rel="stylesheet" href="//cdn.webix.com/edge/skins/compact.css" type="text/css">
-    <script src="//code.jquery.com/jquery-3.2.1.min.js" type="text/javascript"></script>
-    <script src="//cdn.webix.com/edge/webix.js" type="text/javascript"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>raftman</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="stylesheet" href="index.css">
 </head>
 <body>
-<script src="index.js" type="text/javascript" charset="utf-8"></script>
+<header class="toolbar">
+  <img src="logo-32.png" alt="raftman" width="32" height="32">
+  <label>From <input type="datetime-local" id="from" step="1"></label>
+  <label>To <input type="datetime-local" id="to" step="1"></label>
+  <input type="search" id="message" placeholder="Search messages" title="Full text search, e.g. error OR fail*">
+  <label><input type="checkbox" id="follow" checked> Follow</label>
+  <button id="prev" type="button" title="Older entries">&lt;&lt;</button>
+  <button id="next" type="button" title="Newer entries">&gt;&gt;</button>
+  <span id="status" class="status" role="status"></span>
+</header>
+<main>
+  <section id="stat" class="pane stat">
+    <table>
+      <thead><tr><th>Hostname</th><th>Application</th><th>Count</th></tr></thead>
+      <tbody id="stat-body"></tbody>
+    </table>
+  </section>
+  <section id="list" class="pane list">
+    <table>
+      <thead><tr><th>Timestamp</th><th>Hostname</th><th>Application</th><th>Message</th></tr></thead>
+      <tbody id="list-body"></tbody>
+    </table>
+  </section>
+</main>
+<script src="index.js"></script>
 </body>
 </html>

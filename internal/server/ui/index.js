@@ -1,219 +1,170 @@
-webix.ready(function () {
+// raftman web UI: two POSTs against api/stat and api/list, nothing else.
+(function () {
+  "use strict";
 
-    var tsFormat = webix.Date.dateToStr("%Y-%m-%d %H:%i:%s");
-    var tsFormatter = function (s) {
-        return tsFormat(new Date(s));
-    };
+  var $ = function (id) { return document.getElementById(id); };
+  var fromInput = $("from"), toInput = $("to"), messageInput = $("message"), followInput = $("follow"),
+      prevButton = $("prev"), nextButton = $("next"), statBody = $("stat-body"), listBody = $("list-body"),
+      listPane = $("list"), status = $("status");
 
-    webix.ui({
-        rows: [
-            {
-                view: "toolbar",
-                height: 40,
-                cols: [
-                    {view: "button", type: "image", id: "home", image: "logo-32.png", width: 50},
-                    {view: "datepicker", id: "fromTimestamp", timepicker: true, width: 200},
-                    {view: "datepicker", id: "toTimestamp", timepicker: true, width: 200},
-                    {view: "text", id: "message", width: 300},
-                    {view: "checkbox", id: "follow", label: "Follow", value: true, width: 100},
-                    {view: "button", id: "prevPage", value: "<<", width: 50},
-                    {view: "button", id: "nextPage", value: ">>", width: 50}
-                ]
-            },
-            {
-                cols: [
-                    {
-                        view: "datatable",
-                        id: "queryStat",
-                        //autoConfig: true,
-                        columns: [
-                            {id: "Hostname", header: "Hostname", width: 150},
-                            {id: "Application", header: "Application", width: 150},
-                            {id: "Count", header: "Count", fillspace: true}
-                        ],
-                        select: "row",
-                        data: [],
-                        width: 300
-                    },
-                    {
-                        view: "datatable",
-                        id: "queryList",
-                        //autoConfig: true,
-                        columns: [
-                            {id: "Timestamp", header: "Timestamp", width: 175, format: tsFormatter},
-                            {id: "Hostname", header: "Hostname", width: 150},
-                            {id: "Application", header: "Application", width: 150},
-                            {id: "Message", header: "Message", fillspace: true}
-                        ],
-                        data: []
-                    }
-                ]
-            }
-        ]
+  var statRequest = { Limit: 500 };
+  var listRequest = { Limit: 50 };
+  var selected = key("*", "*");
+
+  function post(endpoint, body) {
+    return fetch("api/" + endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      return res.json();
+    }).then(function (data) {
+      if (data.Error) { throw new Error(data.Error); }
+      return data;
     });
+  }
 
-    function post(url, data) {
-        return $.ajax(url, {
-            method: "POST",
-            contentType: "application/json",
-            data: JSON.stringify(data),
-            dataType: "json"
-        })
+  function showError(err) { status.textContent = err.message || String(err); }
+  function clearError() { status.textContent = ""; }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  function formatTimestamp(s) {
+    var d = new Date(s);
+    if (isNaN(d)) { return s; }
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " +
+      pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  }
+
+  function row(cells, k) {
+    var tr = document.createElement("tr");
+    cells.forEach(function (c) {
+      var td = document.createElement("td");
+      td.textContent = c;
+      tr.appendChild(td);
+    });
+    if (k !== undefined) { tr.dataset.key = k; }
+    return tr;
+  }
+
+  // key joins hostname and application with a separator no hostname contains.
+  function key(host, app) { return host + "" + app; }
+
+  // updateStat rebuilds the sidebar and re-selects the current row, which in
+  // turn refreshes the list.
+  function updateStat() {
+    return post("stat", statRequest).then(function (data) {
+      var rows = [row(["*", "*", ""], key("*", "*"))];
+      var stat = data.Stat || {};
+      Object.keys(stat).forEach(function (host) {
+        rows.push(row([host, "*", ""], key(host, "*")));
+        Object.keys(stat[host]).forEach(function (app) {
+          rows.push(row([host, app, stat[host][app]], key(host, app)));
+        });
+      });
+      statBody.replaceChildren.apply(statBody, rows);
+      if (!select(selected)) { select(key("*", "*")); }
+      clearError();
+    }).catch(showError);
+  }
+
+  function select(k) {
+    var found = false;
+    Array.prototype.forEach.call(statBody.children, function (tr) {
+      var match = tr.dataset.key === k;
+      tr.classList.toggle("selected", match);
+      found = found || match;
+    });
+    if (!found) { return false; }
+    selected = k;
+    var parts = k.split("");
+    listRequest.Hostname = parts[0] !== "*" ? parts[0] : undefined;
+    listRequest.Application = parts[1] !== "*" ? parts[1] : undefined;
+    listRequest.Offset = 0;
+    updateList();
+    return true;
+  }
+
+  // updateList shows the page oldest first, newest at the bottom.
+  function updateList() {
+    return post("list", listRequest).then(function (data) {
+      var entries = (data.Entries || []).slice().reverse();
+      listBody.replaceChildren.apply(listBody, entries.map(function (e) {
+        return row([formatTimestamp(e.Timestamp), e.Hostname, e.Application, e.Message]);
+      }));
+      listPane.scrollTop = listPane.scrollHeight;
+      clearError();
+    }).catch(showError);
+  }
+
+  function schedule() {
+    setTimeout(function () {
+      (followInput.checked ? updateStat() : Promise.resolve()).then(schedule, schedule);
+    }, 5000);
+  }
+
+  function toISO(value) {
+    if (!value) { return undefined; }
+    var d = new Date(value);
+    return isNaN(d) ? undefined : d.toISOString();
+  }
+
+  fromInput.addEventListener("change", function () {
+    statRequest.FromTimestamp = listRequest.FromTimestamp = toISO(fromInput.value);
+    listRequest.Offset = 0;
+    updateStat();
+  });
+
+  toInput.addEventListener("change", function () {
+    statRequest.ToTimestamp = listRequest.ToTimestamp = toISO(toInput.value);
+    listRequest.Offset = 0;
+    updateStat();
+  });
+
+  // "change" fires on blur, "search" on Enter and on clearing the field;
+  // both may fire for one edit, so only react when the value really changed.
+  function applyMessage() {
+    var value = messageInput.value || undefined;
+    if (value === statRequest.Message) { return; }
+    statRequest.Message = listRequest.Message = value;
+    listRequest.Offset = 0;
+    updateStat();
+  }
+  messageInput.addEventListener("change", applyMessage);
+  messageInput.addEventListener("search", applyMessage);
+  messageInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { applyMessage(); }
+  });
+
+  followInput.addEventListener("change", function () {
+    if (followInput.checked) {
+      listRequest.Offset = 0;
+      updateStat();
     }
+  });
 
-    //var home = $$("home");
-    var fromTimestamp = $$("fromTimestamp");
-    var toTimestamp = $$("toTimestamp");
-    var message = $$("message");
-    var follow = $$("follow");
-    var prevPage = $$("prevPage");
-    var nextPage = $$("nextPage");
-    var queryStat = $$("queryStat");
-    var queryList = $$("queryList");
+  prevButton.addEventListener("click", function () {
+    followInput.checked = false;
+    listRequest.Offset = (listRequest.Offset || 0) + listRequest.Limit;
+    updateList();
+  });
 
-    var queryStatRequest = {
-        Limit: 500
-    };
+  nextButton.addEventListener("click", function () {
+    followInput.checked = false;
+    listRequest.Offset = (listRequest.Offset || 0) - listRequest.Limit;
+    if (listRequest.Offset <= 0) {
+      listRequest.Offset = 0;
+      followInput.checked = true;
+      updateStat();
+    } else {
+      updateList();
+    }
+  });
 
-    var queryListRequest = {
-        Limit: 50
-    };
+  statBody.addEventListener("click", function (e) {
+    var tr = e.target.closest("tr");
+    if (tr && tr.dataset.key !== undefined) { select(tr.dataset.key); }
+  });
 
-    var autoUpdateEnabled = true;
-
-    var updateStat = function () {
-        return post("api/stat", queryStatRequest).done(function (data) {
-            var selectedId = queryStat.getSelectedId();
-            queryStat.clearAll();
-            queryStat.add({
-                id: "*-*",
-                Hostname: "*",
-                Application: "*"
-            });
-            if (data.Stat) {
-                $.each(data.Stat, function (hostname, applications) {
-                    queryStat.add({
-                        id: hostname + "-*",
-                        Hostname: hostname,
-                        Application: "*"
-                    });
-                    $.each(applications, function (application, count) {
-                        queryStat.add({
-                            id: hostname + "-" + application,
-                            Hostname: hostname,
-                            Application: application,
-                            Count: count
-                        });
-                    });
-                });
-            }
-            queryStat.adjustColumn("Hostname");
-            queryStat.adjustColumn("Application");
-            queryStat.adjustColumn("Count");
-            if (selectedId) {
-                try {
-                    queryStat.select(selectedId);
-                } catch (e) {
-                    queryStat.select(queryStat.getIdByIndex(0));
-                }
-            }
-        });
-    };
-
-    var updateList = function () {
-        return post("api/list", queryListRequest).done(function (data) {
-            queryList.clearAll();
-            if (data.Entries) {
-                data.Entries = data.Entries.reverse();
-                $(data.Entries).each(function (_, v) {
-                    queryList.add(v);
-                });
-            }
-            queryList.adjustColumn("Timestamp");
-            queryList.adjustColumn("Hostname");
-            queryList.adjustColumn("Application");
-            if (data.Entries) {
-                queryList.showItemByIndex(data.Entries.length);
-            }
-        });
-    };
-
-    var autoUpdate = function () {
-        setTimeout(function () {
-            if (autoUpdateEnabled) {
-                updateStat().always(autoUpdate);
-            } else {
-                autoUpdate();
-            }
-        }, 5000);
-    };
-
-    fromTimestamp.attachEvent("onChange", function (value) {
-        queryStatRequest.FromTimestamp = queryListRequest.FromTimestamp = value;
-        queryListRequest.Offset = 0;
-        updateStat();
-    });
-
-    toTimestamp.attachEvent("onChange", function (value) {
-        queryStatRequest.ToTimestamp = queryListRequest.ToTimestamp = value;
-        queryListRequest.Offset = 0;
-        updateStat();
-    });
-
-    message.attachEvent("onChange", function (value) {
-        queryStatRequest.Message = queryListRequest.Message = value;
-        queryListRequest.Offset = 0;
-        updateStat();
-    });
-
-    follow.attachEvent("onChange", function (value) {
-        autoUpdateEnabled = value;
-        if (value === true) {
-            queryListRequest.Offset = 0;
-            updateStat();
-        }
-    });
-
-    prevPage.attachEvent("onItemClick", function () {
-        follow.setValue(false);
-        if (!queryListRequest.Offset) {
-            queryListRequest.Offset = 0;
-        }
-        queryListRequest.Offset += queryListRequest.Limit;
-        updateList();
-    });
-
-    nextPage.attachEvent("onItemClick", function () {
-        if (follow.getValue()) {
-            follow.setValue(false);
-        }
-        if (!queryListRequest.Offset) {
-            queryListRequest.Offset = 0;
-        }
-        queryListRequest.Offset -= queryListRequest.Limit;
-        if (queryListRequest.Offset <= 0) {
-            queryListRequest.Offset = 0;
-            follow.setValue(true);
-        } else {
-            updateList();
-        }
-    });
-
-    queryStat.attachEvent("onAfterSelect", function (data) {
-        if (data && data.id) {
-            var stat = queryStat.getItem(data.id);
-            if (stat) {
-                queryListRequest.Hostname = stat.Hostname !== "*" ? stat.Hostname : null;
-                queryListRequest.Application = stat.Application !== "*" ? stat.Application : null;
-            }
-        }
-        queryListRequest.Offset = 0;
-        updateList();
-    });
-
-    updateStat().done(function () {
-        queryStat.select(queryStat.getIdByIndex(0));
-        autoUpdate();
-    });
-
-});
+  updateStat().then(schedule);
+})();
