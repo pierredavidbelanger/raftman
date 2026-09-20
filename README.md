@@ -7,6 +7,7 @@ A syslog server with integrated full text search via a JSON API and Web UI.
 - [getting started](#getting-started)
 - [configuration](#configuration)
 - [build from source](#build-from-source)
+- [changelog](CHANGELOG.md)
 
 ## getting started
 

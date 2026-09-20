@@ -40,5 +40,6 @@ archives:
 checksum:
   name_template: checksums.txt
 
+# Release notes come from CHANGELOG.md (see release.yml).
 changelog:
-  use: git
+  disable: true

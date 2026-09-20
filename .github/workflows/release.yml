@@ -2,7 +2,7 @@ name: release
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
 
 permissions:
   contents: write
@@ -20,10 +20,15 @@ jobs:
       - uses: mlugg/setup-zig@v2
         with:
           version: 0.14.1
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v ver="$GITHUB_REF_NAME" '/^## \[/{ p = ($0 ~ "^## \\[" ver "\\]") ; next } p' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "no CHANGELOG.md section for $GITHUB_REF_NAME"; exit 1; }
+          cat notes.md
       - uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
-          args: release --clean
+          args: release --clean --release-notes=notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
