@@ -1,0 +1,1 @@
+{"Entries":[{"Timestamp":"2019-11-21T10:00:02-05:00","Hostname":"web2","Application":"nginx","Message":"GET /api 500"},{"Timestamp":"2019-11-21T10:00:01+02:00","Hostname":"web1","Application":"nginx","Message":"GET /favicon.ico 404"},{"Timestamp":"2019-11-21T10:00:00Z","Hostname":"web1","Application":"nginx","Message":"GET /index.html 200"}]}

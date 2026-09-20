@@ -1,0 +1,14 @@
+[
+  {"transport": "udp5424", "data": "<134>1 2019-11-21T10:00:00Z web1 nginx - - - GET /index.html 200"},
+  {"transport": "udp5424", "data": "<134>1 2019-11-21T10:00:01+02:00 web1 nginx - - - GET /favicon.ico 404"},
+  {"transport": "udp5424", "data": "<134>1 2019-11-21T10:00:02-05:00 web2 nginx - - - GET /api 500"},
+  {"transport": "udp5424", "data": "<131>1 2019-11-21T10:00:03Z db1 postgres - - - connection refused"},
+  {"transport": "udp5424", "data": "<134>1 2019-11-21T10:00:04.123456Z web1 app - - - héllo wörld ünïcode 日本語"},
+  {"transport": "udp5424", "data": "<134>1 2019-11-21T10:00:05Z web2 app 1234 ID47 [exampleSDID@32473 iut=\"3\"] with structured data"},
+  {"transport": "tcp5424", "data": "<134>1 2019-11-21T10:00:06Z web2 app - - - over tcp line one"},
+  {"transport": "tcp5424", "data": "<134>1 2019-11-21T10:00:07Z web2 app - - - over tcp line two"},
+  {"transport": "udp3164", "data": "<34>Nov 21 10:00:08 host3 su: 'su root' failed for lonvick on /dev/pts/8"},
+  {"transport": "udp3164", "data": "<13>Nov 21 10:00:09 host3 cron[123]: job started"},
+  {"transport": "udp5424", "data": "<134>1 2019-11-21T10:00:10Z web1 - - - - no app name"},
+  {"transport": "udp5424", "data": "<134>1 2019-11-21T10:00:11Z web1 app - - - say \"hi\" \\ back <tag>"}
+]
