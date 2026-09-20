@@ -87,6 +87,8 @@ raftman \
 
 Syslog `format` is one of `RFC5424` (default), `RFC3164`, `RFC6587` (octet-counted framing over TCP) or `automatic`, which detects the format of each message.
 
+Timestamps are stored in UTC. The API answers `GET /api/healthz` with `{"Status":"ok"}` once the database is reachable, on both the `api+http` and `ui+http` frontends.
+
 ## build from source
 
 raftman needs Go and a C compiler (the SQLite driver is cgo):

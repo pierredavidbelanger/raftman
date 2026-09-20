@@ -12,4 +12,5 @@ type Store interface {
 	Insert(*api.LogEntry)
 	QueryStat(context.Context, *api.QueryRequest) (*api.QueryStatResponse, error)
 	QueryList(context.Context, *api.QueryRequest) (*api.QueryListResponse, error)
+	Ping(context.Context) error
 }

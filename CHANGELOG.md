@@ -16,6 +16,9 @@ by earlier versions keep working; existing rows are not modified.
 - Syslog frontends accept `format=RFC6587` (octet-counted framing over TCP)
   and `format=automatic`, which detects RFC3164, RFC5424 or RFC6587 per
   message, so one listener can serve mixed senders.
+- `GET <api path>/healthz` answers `{"Status":"ok"}` after checking the
+  database, or 503 with an `Error`. Available on both the `api+http` and
+  `ui+http` frontends (`/api/healthz` with the defaults).
 
 ### Changed
 

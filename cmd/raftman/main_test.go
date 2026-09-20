@@ -839,3 +839,21 @@ func TestSyslogRFC6587(t *testing.T) {
 		t.Errorf("got %+v", got)
 	}
 }
+
+func TestHealthz(t *testing.T) {
+	h := startHarness(t, "")
+	status, body := call(t, h.api+"healthz", "GET", nil)
+	if status != 200 || string(body) != `{"Status":"ok"}`+"\n" {
+		t.Errorf("api: got %d %s", status, body)
+	}
+	port := freeTCPPort(t)
+	ch := spawn(t,
+		"-backend", "sqlite://"+filepath.Join(t.TempDir(), "logs.db"),
+		"-frontend", fmt.Sprintf("ui+http://127.0.0.1:%d/", port),
+	)
+	base := fmt.Sprintf("http://127.0.0.1:%d/", port)
+	waitReady(t, ch, base+"api/healthz")
+	if status, body := call(t, base+"api/healthz", "GET", nil); status != 200 || string(body) != `{"Status":"ok"}`+"\n" {
+		t.Errorf("ui: got %d %s", status, body)
+	}
+}

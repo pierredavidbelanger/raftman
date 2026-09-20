@@ -45,6 +45,17 @@ func NewHTTP(cfg HTTPConfig, store Store) (*HTTP, error) {
 	mux.HandleFunc(apiPath+"list", query(store.QueryList, func(msg string) *api.QueryListResponse {
 		return &api.QueryListResponse{Error: msg}
 	}))
+	mux.HandleFunc(apiPath+"healthz", func(w http.ResponseWriter, r *http.Request) {
+		res := api.HealthResponse{Status: "ok"}
+		w.Header().Set("Content-Type", "application/json")
+		if err := store.Ping(r.Context()); err != nil {
+			res = api.HealthResponse{Status: "error", Error: err.Error()}
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			log.Printf("Unable to write response: %s", err)
+		}
+	})
 	return &HTTP{addr: cfg.Addr, srv: &http.Server{Handler: mux}}, nil
 }
 

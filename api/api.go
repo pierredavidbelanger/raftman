@@ -30,3 +30,8 @@ type QueryListResponse struct {
 	Entries []*LogEntry `json:",omitempty"`
 	Error   string      `json:",omitempty"`
 }
+
+type HealthResponse struct {
+	Status string
+	Error  string `json:",omitempty"`
+}

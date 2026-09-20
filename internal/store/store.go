@@ -265,6 +265,14 @@ func (s *Store) QueryList(ctx context.Context, req *api.QueryRequest) (*api.Quer
 	return res, nil
 }
 
+// Ping runs a trivial query to check the database is usable.
+func (s *Store) Ping(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, s.cfg.Timeout)
+	defer cancel()
+	var one int
+	return s.db.QueryRowContext(ctx, "SELECT 1").Scan(&one)
+}
+
 // fail sorts a query failure: a timeout becomes the returned error, anything
 // else becomes the message reported in the response.
 func (s *Store) fail(ctx context.Context, err error) (string, error) {
