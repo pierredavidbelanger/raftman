@@ -287,12 +287,10 @@ func where(req *api.QueryRequest) (string, []any) {
 	if req.Hostname != "" {
 		b.WriteString(" AND h.host = ?")
 		args = append(args, req.Hostname)
-		// Application only applies together with Hostname: observed behavior
-		// of every release so far, kept on purpose (spec quirk Q1).
-		if req.Application != "" {
-			b.WriteString(" AND h.app = ?")
-			args = append(args, req.Application)
-		}
+	}
+	if req.Application != "" {
+		b.WriteString(" AND h.app = ?")
+		args = append(args, req.Application)
 	}
 	if req.Message != "" {
 		b.WriteString(" AND b.msg MATCH ?")

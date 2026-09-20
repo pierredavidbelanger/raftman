@@ -8,6 +8,14 @@ The GitHub release notes for a version are taken verbatim from its section here.
 
 ## [Unreleased]
 
+Behavior changes, all in the direction users would expect. Databases written
+by earlier versions keep working; existing rows are not modified.
+
+### Changed
+
+- The `Application` filter of the API now applies on its own. It used to be
+  silently ignored unless `Hostname` was also given.
+
 ## [1.0.2] - 2026-09-20
 
 No change to the syslog inputs, the JSON API, the command line or the database

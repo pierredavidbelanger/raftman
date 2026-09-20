@@ -728,3 +728,11 @@ func TestVersionFlag(t *testing.T) {
 		t.Errorf("output %q, want %q", out, "dev\n")
 	}
 }
+
+func TestApplicationFilterWithoutHostname(t *testing.T) {
+	h := startHarness(t, legacyDBCopy(t))
+	_, body := call(t, h.api+"stat", "POST", str(`{"Limit":100,"Application":"nginx"}`))
+	if string(body) != `{"Stat":{"web1":{"nginx":2},"web2":{"nginx":1}}}`+"\n" {
+		t.Errorf("got %s", body)
+	}
+}
