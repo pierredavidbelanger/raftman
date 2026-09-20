@@ -1,5 +1,8 @@
 # Static linux binaries. The SQLite driver is cgo, so cross-compilation uses
-# zig as the C compiler and links statically against musl.
+# zig as the C compiler and links statically against musl. The external
+# linker keeps the C debug info unless told to strip (-extldflags -s).
+#
+# Rehearse locally with: goreleaser release --snapshot --clean
 version: 2
 
 builds:
@@ -11,7 +14,7 @@ builds:
       - CGO_ENABLED=1
       - CC=zig cc -target x86_64-linux-musl
     flags: [-trimpath]
-    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags -static"]
+    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags '-static -s'"]
   - id: linux-arm64
     main: ./cmd/raftman
     goos: [linux]
@@ -20,7 +23,7 @@ builds:
       - CGO_ENABLED=1
       - CC=zig cc -target aarch64-linux-musl
     flags: [-trimpath]
-    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags -static"]
+    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags '-static -s'"]
   - id: linux-armv7
     main: ./cmd/raftman
     goos: [linux]
@@ -30,7 +33,7 @@ builds:
       - CGO_ENABLED=1
       - CC=zig cc -target arm-linux-musleabihf
     flags: [-trimpath]
-    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags -static"]
+    ldflags: ["-s -w -X main.version={{.Version}} -linkmode external -extldflags '-static -s'"]
 
 archives:
   - formats: [tar.gz]
