@@ -1,0 +1,1 @@
+{"Stat":{"db1":{"postgres":1},"host3":{"cron":1,"su":1},"web1":{"-":1,"app":2,"nginx":2},"web2":{"app":3,"nginx":1}}}

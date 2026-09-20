@@ -13,6 +13,11 @@ by earlier versions keep working; existing rows are not modified.
 
 ### Changed
 
+- Timestamps are stored in UTC. Entries from senders in different timezones
+  used to interleave wrongly in `list` and in date range filters, because the
+  stored value kept the sender's offset and was compared as text. Rows written
+  by earlier versions are left as they are, so ordering between old and new
+  rows around the upgrade can still be off by the sender's offset.
 - The `Application` filter of the API now applies on its own. It used to be
   silently ignored unless `Hostname` was also given.
 

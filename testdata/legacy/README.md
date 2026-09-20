@@ -10,10 +10,11 @@ The tests in `main_test.go` replay `queries.json` against `legacy.db` and agains
 a fresh ingest of `packets.json`, and compare byte for byte.
 
 Do not regenerate these files with a newer binary; that would defeat their purpose.
-`golden/list_application_only.body` was deliberately updated in 1.1.0 when the
-`Application` filter started to apply without `Hostname` (it used to be ignored).
 To regenerate with the reference binary:
 
     git worktree add /tmp/raftman-ref 6a8f36a
     (cd /tmp/raftman-ref && go install github.com/mjibson/esc@latest && go generate && go build -o raftman-ref)
-    python3 testdata/legacy/generate.py /tmp/raftman-ref/raftman-ref
+    python3 testdata/legacy/generate.py /tmp/raftman-ref/raftman-ref testdata/legacy --keep-db
+
+`golden/list_application_only.body` was deliberately updated in 1.1.0 when the
+`Application` filter started to apply without `Hostname` (it used to be ignored).

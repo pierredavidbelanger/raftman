@@ -152,7 +152,9 @@ func (s *Store) write(entries []*api.LogEntry) {
 		}
 		defer body.Close()
 		for _, e := range entries {
-			if _, err := head.Exec(e.Timestamp, e.Hostname, e.Application); err != nil {
+			// Stored in UTC: ts is compared as a string, so a single offset
+			// keeps ordering and range filters right across senders.
+			if _, err := head.Exec(e.Timestamp.UTC(), e.Hostname, e.Application); err != nil {
 				return err
 			}
 			if _, err := body.Exec(e.Message); err != nil {

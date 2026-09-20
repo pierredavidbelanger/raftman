@@ -1,0 +1,1 @@
+{"Entries":[{"Timestamp":"2026-11-21T10:00:08Z","Hostname":"host3","Application":"su","Message":"'su root' failed for lonvick on /dev/pts/8"},{"Timestamp":"2019-11-21T15:00:02Z","Hostname":"web2","Application":"nginx","Message":"GET /api 500"}]}

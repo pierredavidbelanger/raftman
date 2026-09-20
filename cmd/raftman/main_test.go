@@ -24,13 +24,14 @@ import (
 	"time"
 )
 
-// legacyYear is the year testdata/legacy was generated in. RFC3164 packets carry
-// no year, so go-syslog stamps them with the current one; goldens produced from a
-// live ingest are compared after substituting the current year for this one.
-const legacyYear = "2026"
+// fixtureYear is the year the testdata goldens were generated in. RFC3164
+// packets carry no year, so go-syslog stamps them with the current one; goldens
+// compared against a live ingest are adjusted to the current year first.
+const fixtureYear = "2026"
 
 const (
-	legacyDir   = "../../testdata/legacy"
+	legacyDir   = "../../testdata/legacy" // written by the pre-modernization binary
+	ingestDir   = "../../testdata/ingest" // written by the current binary
 	packetCount = 12
 )
 
@@ -309,9 +310,9 @@ func loadQueries(t *testing.T) []query {
 	return q
 }
 
-func readGolden(t *testing.T, name string) (int, []byte) {
+func readGolden(t *testing.T, dir, name string) (int, []byte) {
 	t.Helper()
-	st, err := os.ReadFile(filepath.Join(legacyDir, "golden", name+".status"))
+	st, err := os.ReadFile(filepath.Join(dir, "golden", name+".status"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +320,7 @@ func readGolden(t *testing.T, name string) (int, []byte) {
 	if _, err := fmt.Sscan(string(st), &status); err != nil {
 		t.Fatal(err)
 	}
-	body, err := os.ReadFile(filepath.Join(legacyDir, "golden", name+".body"))
+	body, err := os.ReadFile(filepath.Join(dir, "golden", name+".body"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -329,10 +330,10 @@ func readGolden(t *testing.T, name string) (int, []byte) {
 // fixYear rewrites the RFC3164 timestamps of the fixture to the current year.
 func fixYear(b []byte) []byte {
 	year := fmt.Sprint(time.Now().Year())
-	if year == legacyYear {
+	if year == fixtureYear {
 		return b
 	}
-	return bytes.ReplaceAll(b, []byte(legacyYear+"-11-21"), []byte(year+"-11-21"))
+	return bytes.ReplaceAll(b, []byte(fixtureYear+"-11-21"), []byte(year+"-11-21"))
 }
 
 func copyFile(t *testing.T, src, dst string) {
@@ -389,11 +390,11 @@ func sendUDP(t *testing.T, port int, data string) {
 	}
 }
 
-func checkQueries(t *testing.T, api string, adjust func([]byte) []byte) {
+func checkQueries(t *testing.T, api, goldenDir string, adjust func([]byte) []byte) {
 	t.Helper()
 	for _, q := range loadQueries(t) {
 		t.Run(q.Name, func(t *testing.T) {
-			wantStatus, wantBody := readGolden(t, q.Name)
+			wantStatus, wantBody := readGolden(t, goldenDir, q.Name)
 			wantBody = adjust(wantBody)
 			gotStatus, gotBody := call(t, api+q.Endpoint, q.Method, q.Body)
 			if gotStatus != wantStatus {
@@ -452,24 +453,25 @@ func dumpRows(t *testing.T, path string) []byte {
 // checks every query returns byte-for-byte what that binary returned.
 func TestLegacyFixture(t *testing.T) {
 	h := startHarness(t, legacyDBCopy(t))
-	checkQueries(t, h.api, func(b []byte) []byte { return b })
+	checkQueries(t, h.api, legacyDir, func(b []byte) []byte { return b })
 }
 
-// TestIngestMatchesLegacy feeds the fixture packets through the syslog frontends
+// TestIngestMatchesGolden feeds the fixture packets through the syslog frontends
 // into a fresh database and checks both the API output and the raw table content
-// match what the pre-modernization binary produced.
-func TestIngestMatchesLegacy(t *testing.T) {
+// against testdata/ingest. That set differs from testdata/legacy only by the
+// deliberate behavior changes listed in CHANGELOG.md.
+func TestIngestMatchesGolden(t *testing.T) {
 	h := startHarness(t, "")
 	sendPackets(t, h, loadPackets(t))
 	waitCount(t, h.api, packetCount)
-	checkQueries(t, h.api, fixYear)
+	checkQueries(t, h.api, ingestDir, fixYear)
 
 	h.signal(t, os.Interrupt)
 	if code := h.wait(t, 10*time.Second); code != 0 {
 		t.Fatalf("exit code %d; output:\n%s", code, h.output)
 	}
 
-	want, err := os.ReadFile(filepath.Join(legacyDir, "rows.txt"))
+	want, err := os.ReadFile(filepath.Join(ingestDir, "rows.txt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -734,5 +736,39 @@ func TestApplicationFilterWithoutHostname(t *testing.T) {
 	_, body := call(t, h.api+"stat", "POST", str(`{"Limit":100,"Application":"nginx"}`))
 	if string(body) != `{"Stat":{"web1":{"nginx":2},"web2":{"nginx":1}}}`+"\n" {
 		t.Errorf("got %s", body)
+	}
+}
+
+type entry struct {
+	Timestamp   time.Time
+	Hostname    string
+	Application string
+	Message     string
+}
+
+func listEntries(t *testing.T, api string, req string) []entry {
+	t.Helper()
+	_, body := call(t, api+"list", "POST", str(req))
+	var res struct{ Entries []entry }
+	if err := json.Unmarshal(body, &res); err != nil {
+		t.Fatalf("bad response %s: %v", body, err)
+	}
+	return res.Entries
+}
+
+// TestUTCTimestamps: entries are stored in UTC so that ordering and range
+// filters, which compare the stored string, agree across sender timezones.
+func TestUTCTimestamps(t *testing.T) {
+	h := startHarness(t, "")
+	sendUDP(t, h.udp5424, "<134>1 2019-11-21T10:00:00+02:00 h a - - - early") // 08:00Z
+	sendUDP(t, h.udp5424, "<134>1 2019-11-21T09:00:00Z h a - - - late")       // 09:00Z
+	waitCount(t, h.api, 2)
+	got := listEntries(t, h.api, `{"Limit":10}`)
+	if len(got) != 2 || got[0].Message != "late" || got[1].Message != "early" {
+		t.Errorf("order: got %+v", got)
+	}
+	_, body := call(t, h.api+"list", "POST", str(`{"Limit":10,"ToTimestamp":"2019-11-21T08:30:00Z"}`))
+	if !strings.Contains(string(body), `"Timestamp":"2019-11-21T08:00:00Z"`) || strings.Contains(string(body), "late") {
+		t.Errorf("range filter: got %s", body)
 	}
 }

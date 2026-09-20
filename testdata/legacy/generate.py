@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
-"""Generate the legacy persistence fixture with a *reference* raftman binary.
+"""Generate a golden set by running a raftman binary against packets.json.
 
-Usage: generate.py /path/to/reference/raftman
+Usage: generate.py /path/to/raftman OUTDIR [--keep-db]
 
 Starts the binary with a fresh database, feeds it packets.json over the three
-syslog transports, runs every query in queries.json against the API, and writes:
+syslog transports, runs every query in queries.json against the API, and
+writes into OUTDIR:
 
-  legacy.db            the resulting SQLite database
   golden/<name>.status HTTP status of each query
   golden/<name>.body   raw HTTP response body of each query
-  rows.txt             raw content of the logh/logb tables, for eyeballing
+  rows.txt             raw content of the logh/logb tables
+  legacy.db            the resulting SQLite database (only with --keep-db)
 
-The Go tests replay the same queries against legacy.db and compare byte for byte.
+testdata/legacy was produced by the pre-modernization binary and pins how old
+databases are read. testdata/ingest is produced by the current binary and pins
+what a fresh ingest looks like; the diff between the two golden directories is
+the list of deliberate behavior changes.
 """
 import http.client, json, os, shutil, signal, socket, sqlite3, subprocess, sys, tempfile, time
 
@@ -21,7 +25,9 @@ def free_port():
     s = socket.socket(); s.bind(("127.0.0.1", 0)); p = s.getsockname()[1]; s.close(); return p
 
 def main():
-    ref = sys.argv[1]
+    ref, out = sys.argv[1], os.path.abspath(sys.argv[2])
+    keep_db = "--keep-db" in sys.argv
+    os.makedirs(out, exist_ok=True)
     udp5424, tcp5424, udp3164, api = (free_port() for _ in range(4))
     tmp = tempfile.mkdtemp(prefix="raftman-legacy-")
     db = os.path.join(tmp, "legacy.db")
@@ -71,7 +77,7 @@ def main():
     else:
         proc.kill(); sys.exit(f"only {total} of {len(packets)} packets ingested")
 
-    golden = os.path.join(HERE, "golden")
+    golden = os.path.join(out, "golden")
     shutil.rmtree(golden, ignore_errors=True); os.makedirs(golden)
     for q in json.load(open(os.path.join(HERE, "queries.json"), encoding="utf-8")):
         st, body = call(q["endpoint"], q["method"], q.get("body"))
@@ -83,9 +89,10 @@ def main():
     proc.wait(timeout=10)
     print("exit code", proc.returncode)
 
-    shutil.copy(db, os.path.join(HERE, "legacy.db"))
-    con = sqlite3.connect(os.path.join(HERE, "legacy.db"))
-    with open(os.path.join(HERE, "rows.txt"), "w", encoding="utf-8") as f:
+    if keep_db:
+        shutil.copy(db, os.path.join(out, "legacy.db"))
+    con = sqlite3.connect(db)
+    with open(os.path.join(out, "rows.txt"), "w", encoding="utf-8") as f:
         f.write("-- SELECT rowid, ts, host, app FROM logh ORDER BY rowid\n")
         for row in con.execute("SELECT rowid, ts, host, app FROM logh ORDER BY rowid"):
             f.write("\t".join(map(str, row)) + "\n")

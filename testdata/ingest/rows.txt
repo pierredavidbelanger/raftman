@@ -1,0 +1,26 @@
+-- SELECT rowid, ts, host, app FROM logh ORDER BY rowid
+1	2019-11-21 10:00:00+00:00	web1	nginx
+2	2019-11-21 08:00:01+00:00	web1	nginx
+3	2019-11-21 15:00:02+00:00	web2	nginx
+4	2019-11-21 10:00:03+00:00	db1	postgres
+5	2019-11-21 10:00:04.123456+00:00	web1	app
+6	2019-11-21 10:00:05+00:00	web2	app
+7	2019-11-21 10:00:06+00:00	web2	app
+8	2019-11-21 10:00:07+00:00	web2	app
+9	2026-11-21 10:00:08+00:00	host3	su
+10	2026-11-21 10:00:09+00:00	host3	cron
+11	2019-11-21 10:00:10+00:00	web1	-
+12	2019-11-21 10:00:11+00:00	web1	app
+-- SELECT docid, msg FROM logb ORDER BY docid
+1	GET /index.html 200
+2	GET /favicon.ico 404
+3	GET /api 500
+4	connection refused
+5	héllo wörld ünïcode 日本語
+6	with structured data
+7	over tcp line one
+8	over tcp line two
+9	'su root' failed for lonvick on /dev/pts/8
+10	job started
+11	no app name
+12	say "hi" \ back <tag>
